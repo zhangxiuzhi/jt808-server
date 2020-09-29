@@ -1,7 +1,10 @@
 package org.yzh.protocol.jsatl12;
 
 import org.yzh.framework.orm.annotation.Field;
+import org.yzh.framework.orm.annotation.Message;
+import org.yzh.framework.orm.model.AbstractMessage;
 import org.yzh.framework.orm.model.DataType;
+import org.yzh.protocol.basics.Header;
 
 import java.nio.ByteBuffer;
 
@@ -11,15 +14,19 @@ import java.nio.ByteBuffer;
  * @author yezhihao
  * @home https://gitee.com/yezhihao/jt808-server
  */
-//@Message(prefix = 0x30316364)
-public class DataPacket {
+@Message
+public class DataPacket extends AbstractMessage<Header> {
 
     private int flag;
     private String name;
-    private long offset;
-    private long length;
+    private int offset;
+    private int length;
     private ByteBuffer data;
 
+    @Override
+    public int getMessageId() {
+        return flag;
+    }
 
     @Field(index = 0, type = DataType.DWORD, desc = "帧头标识")
     public int getFlag() {
@@ -40,24 +47,24 @@ public class DataPacket {
     }
 
     @Field(index = 54, type = DataType.DWORD, desc = "数据偏移量")
-    public long getOffset() {
+    public int getOffset() {
         return offset;
     }
 
-    public void setOffset(long offset) {
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 
     @Field(index = 58, type = DataType.DWORD, desc = "数据长度")
-    public long getLength() {
+    public int getLength() {
         return length;
     }
 
-    public void setLength(long length) {
+    public void setLength(int length) {
         this.length = length;
     }
 
-    @Field(index = 62, type = DataType.BYTES, desc = "数据体")
+    @Field(index = 62, type = DataType.BYTES, lengthName = "length", desc = "数据体")
     public ByteBuffer getData() {
         return data;
     }
