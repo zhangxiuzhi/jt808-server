@@ -1,11 +1,10 @@
 package org.yzh.protocol.commons.transform;
 
-import org.yzh.framework.commons.transform.Bit;
+import org.yzh.framework.commons.transform.Bytes;
 import org.yzh.framework.orm.model.DataType;
 import org.yzh.protocol.basics.BytesParameter;
 import org.yzh.protocol.commons.Charsets;
 
-import java.nio.charset.Charset;
 import java.util.*;
 
 /**
@@ -50,15 +49,15 @@ public class TerminalParameterUtils {
         if (dataType != null)
             switch (dataType) {
                 case WORD:
-                    return Bit.readInt16(bytes, 0);
+                    return Bytes.getInt16(bytes, 0);
                 case DWORD:
-                    return Bit.readInt32(bytes, 0);
+                    return Bytes.getInt32(bytes, 0);
                 case BYTE:
                     return bytes[0];
                 case BYTES:
                     return bytes;
             }
-        return new String(bytes, Charset.forName("GBK"));
+        return new String(bytes, Charsets.GBK);
     }
 
     public static byte[] toBytes(int id, String value) {
@@ -66,9 +65,9 @@ public class TerminalParameterUtils {
         if (dataType != null)
             switch (dataType) {
                 case WORD:
-                    return Bit.write2Byte(new byte[2], 0, Integer.parseInt(value));
+                    return Bytes.setInt16(new byte[2], 0, Integer.parseInt(value));
                 case DWORD:
-                    return Bit.write4Byte(new byte[4], 0, Integer.parseInt(value));
+                    return Bytes.setInt32(new byte[4], 0, Integer.parseInt(value));
                 case BYTE:
                     return new byte[]{(byte) Integer.parseInt(value)};
                 case STRING:
@@ -82,9 +81,9 @@ public class TerminalParameterUtils {
         if (dataType != null)
             switch (dataType) {
                 case WORD:
-                    return Bit.write2Byte(new byte[2], 0, value);
+                    return Bytes.setInt16(new byte[2], 0, value);
                 case DWORD:
-                    return Bit.write4Byte(new byte[4], 0, value);
+                    return Bytes.setInt32(new byte[4], 0, value);
                 case BYTE:
                     return new byte[]{(byte) value};
             }
