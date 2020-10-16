@@ -48,8 +48,8 @@ public class DeviceServiceImpl implements DeviceService {
         if (deviceDO == null || deviceDO.getInstallTime() == null)
             record.setInstallTime(now);
 
-        int protocolVersion = request.getSession().getProtocolVersion();
-        if (protocolVersion != -1)
+        Integer protocolVersion = request.getSession().getProtocolVersion();
+        if (protocolVersion == null)
             protocolVersion = request.getHeader().getVersionNo();
         record.setProtocolVersion(protocolVersion);
 
@@ -95,7 +95,11 @@ public class DeviceServiceImpl implements DeviceService {
             return device;
         } catch (Exception e) {
             log.warn("鉴权失败：错误的token，{}", e.getMessage());
-            return null;
+            //TODO 鉴权失败，使用测试车辆，仅供测试！
+            DeviceInfo deviceInfo = new DeviceInfo();
+            deviceInfo.setDeviceId("12345678901");
+            deviceInfo.setPlateNo("测A12345");
+            return deviceInfo;
         }
     }
 }

@@ -24,14 +24,14 @@ public class Session {
 
     private volatile int serialNo = 0;
     private boolean registered = false;
-    private String clientId;
+    private Object clientId;
 
     private final long creationTime;
     private volatile long lastAccessedTime;
     private Map<String, Object> attributes;
     private Object subject;
     private Object snapshot;
-    private int protocolVersion = 0;
+    private Integer protocolVersion;
 
     private SessionManager sessionManager;
 
@@ -80,7 +80,7 @@ public class Session {
         sessionManager.put(clientId, this);
     }
 
-    public String getClientId() {
+    public Object getClientId() {
         return clientId;
     }
 
@@ -130,11 +130,19 @@ public class Session {
         this.snapshot = snapshot;
     }
 
-    public int getProtocolVersion() {
+    public Integer getProtocolVersion() {
         return protocolVersion;
     }
 
-    public void setProtocolVersion(String clientId, int protocolVersion) {
+    public void setProtocolVersion(int protocolVersion) {
+        this.protocolVersion = protocolVersion;
+    }
+
+    public Integer cachedProtocolVersion(Object clientId) {
+        return this.sessionManager.getVersion(clientId);
+    }
+
+    public void recordProtocolVersion(Object clientId, int protocolVersion) {
         this.protocolVersion = protocolVersion;
         this.sessionManager.putVersion(clientId, protocolVersion);
     }

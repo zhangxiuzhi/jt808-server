@@ -1,10 +1,17 @@
 package org.yzh.protocol.codec;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.buffer.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yzh.framework.codec.MessageDecoder;
+import org.yzh.framework.commons.transform.Bin;
 import org.yzh.framework.commons.transform.ByteBufUtils;
+import org.yzh.framework.orm.BeanMetadata;
+import org.yzh.framework.orm.MessageHelper;
+import org.yzh.framework.orm.model.AbstractMessage;
+import org.yzh.framework.orm.model.RawMessage;
+import org.yzh.framework.session.Session;
+import org.yzh.protocol.basics.Header;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +21,17 @@ import java.util.List;
  * @author yezhihao
  * @home https://gitee.com/yezhihao/jt808-server
  */
-public class JTMessageDecoder extends MessageDecoder {
+public class JTMessageDecoder implements MessageDecoder<AbstractMessage> {
+
+    private static final Logger log = LoggerFactory.getLogger(JTMessageDecoder.class.getSimpleName());
+
+    private MultiPacketManager multiPacketManager = MultiPacketManager.getInstance();
 
     public JTMessageDecoder(String basePackage) {
-        super(basePackage);
+        MessageHelper.initial(basePackage);
     }
 
     /** 校验 */
-    @Override
     public boolean verify(ByteBuf buf) {
         byte checkCode = buf.getByte(buf.readableBytes() - 1);
         buf = buf.slice(0, buf.readableBytes() - 1);
@@ -30,8 +40,87 @@ public class JTMessageDecoder extends MessageDecoder {
         return checkCode == calculatedCheckCode;
     }
 
-    /** 反转义 */
     @Override
+    public AbstractMessage decode(ByteBuf buf) {
+        return decode(buf, null);
+    }
+
+    public AbstractMessage decode(ByteBuf buf, Session session) {
+        buf = unescape(buf);
+
+        boolean verified = verify(buf);
+        if (!verified)
+            log.error("校验码错误{},{}", session, ByteBufUtil.hexDump(buf));
+
+        int properties = buf.getUnsignedShort(2);
+
+        Integer version = session == null ? null : session.getProtocolVersion();
+        boolean confirmedVersion = version != null;
+        if (!confirmedVersion) {
+            //识别2019及后续版本
+            if (Bin.get(properties, 14)) {
+                version = (int) buf.getUnsignedByte(4);
+                confirmedVersion = true;
+                if (session != null)
+                    session.setProtocolVersion(version);
+            } else {
+                //缺省值为2013版本
+                version = 0;
+            }
+        }
+
+        int headLen;
+        boolean isSubpackage = Bin.get(properties, 13);
+        if (version > 0)
+            headLen = isSubpackage ? 21 : 17;
+        else
+            headLen = isSubpackage ? 16 : 12;
+
+        Class<? extends Header> headerClass = (Class<? extends Header>) MessageHelper.getHeaderClass();
+        BeanMetadata<? extends Header> headMetadata = MessageHelper.getBeanMetadata(headerClass, version);
+
+        Header header = headMetadata.decode(buf.slice(0, headLen));
+        header.setVerified(verified);
+
+        if (!confirmedVersion && session != null) {
+            //通过缓存记录2011版本
+            Integer cachedVersion = session.cachedProtocolVersion(header.getClientId());
+            if (cachedVersion != null)
+                version = cachedVersion;
+            session.setProtocolVersion(version);
+        }
+
+
+        AbstractMessage message;
+        BeanMetadata<? extends AbstractMessage> bodyMetadata = MessageHelper.getBeanMetadata(header.getMessageId(), version);
+        if (bodyMetadata != null) {
+            int bodyLen = header.getBodyLength();
+
+            if (isSubpackage) {
+
+                byte[] bytes = new byte[bodyLen];
+                buf.getBytes(headLen, bytes);
+
+                byte[][] packages = multiPacketManager.addAndGet(header, bytes);
+                if (packages == null)
+                    return null;
+
+                ByteBuf bodyBuf = Unpooled.wrappedBuffer(packages);
+                message = bodyMetadata.decode(bodyBuf);
+
+            } else {
+                message = bodyMetadata.decode(buf.slice(headLen, bodyLen));
+            }
+        } else {
+            message = new RawMessage<>();
+            log.info("未找到对应的BeanMetadata[{}]", header);
+        }
+
+        message.setHeader(header);
+        return message;
+    }
+
+    /** 反转义 */
     public ByteBuf unescape(ByteBuf source) {
         int low = source.readerIndex();
         int high = source.writerIndex();
