@@ -5,42 +5,44 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yzh.framework.codec.MessageEncoder;
 import org.yzh.framework.commons.transform.ByteBufUtils;
-import org.yzh.framework.orm.BeanMetadata;
 import org.yzh.framework.orm.MessageHelper;
-import org.yzh.framework.orm.model.AbstractMessage;
+import org.yzh.framework.orm.Schema;
 import org.yzh.protocol.basics.Header;
+import org.yzh.protocol.basics.JTMessage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * JT协议编码器
  * @author yezhihao
  * @home https://gitee.com/yezhihao/jt808-server
  */
-public class JTMessageEncoder implements MessageEncoder<AbstractMessage<Header>> {
+public class JTMessageEncoder {
 
     private static final Logger log = LoggerFactory.getLogger(JTMessageEncoder.class.getSimpleName());
 
+    private Map<Integer, Schema<Header>> headerSchemaMap;
+
     public JTMessageEncoder(String basePackage) {
         MessageHelper.initial(basePackage);
+        this.headerSchemaMap = MessageHelper.getSchema(Header.class);
     }
 
-    @Override
-    public ByteBuf encode(AbstractMessage<Header> message) {
+    public ByteBuf encode(JTMessage message) {
         Header header = message.getHeader();
         int version = header.getVersionNo();
 
-        BeanMetadata bodyMetadata = MessageHelper.getBeanMetadata(message.getClass(), version);
+        Schema bodySchema = MessageHelper.getSchema(message.getClass(), version);
         ByteBuf bodyBuf;
-        if (bodyMetadata != null) {
-            bodyBuf = PooledByteBufAllocator.DEFAULT.heapBuffer(bodyMetadata.getLength(), 2048);
-            bodyMetadata.encode(bodyBuf, message);
+        if (bodySchema != null) {
+            bodyBuf = PooledByteBufAllocator.DEFAULT.heapBuffer(bodySchema.length(), 2048);
+            bodySchema.writeTo(bodyBuf, message);
         } else {
             bodyBuf = Unpooled.EMPTY_BUFFER;
-            log.info("未找到对应的BeanMetadata[{}]", message.getClass());
+            log.debug("未找到对应的Schema[{}]", message.getClass());
         }
 
         int bodyLen = bodyBuf.readableBytes();
@@ -48,9 +50,9 @@ public class JTMessageEncoder implements MessageEncoder<AbstractMessage<Header>>
             throw new RuntimeException("消息体不能大于1023kb," + bodyLen + "Kb");
         header.setBodyLength(bodyLen);
 
-        BeanMetadata headMetadata = MessageHelper.getBeanMetadata(header.getClass(), version);
-        ByteBuf headerBuf = PooledByteBufAllocator.DEFAULT.heapBuffer(headMetadata.getLength(), 2048);
-        headMetadata.encode(headerBuf, header);
+        Schema headerSchema = headerSchemaMap.get(version);
+        ByteBuf headerBuf = PooledByteBufAllocator.DEFAULT.heapBuffer(headerSchema.length(), 2048);
+        headerSchema.writeTo(headerBuf, header);
         ByteBuf allBuf = Unpooled.wrappedBuffer(headerBuf, bodyBuf);
 
         allBuf = sign(allBuf);
@@ -59,14 +61,14 @@ public class JTMessageEncoder implements MessageEncoder<AbstractMessage<Header>>
     }
 
     /** 签名 */
-    public ByteBuf sign(ByteBuf buf) {
+    protected ByteBuf sign(ByteBuf buf) {
         byte checkCode = ByteBufUtils.bcc(buf);
         buf.writeByte(checkCode);
         return buf;
     }
 
     /** 转义处理 */
-    public ByteBuf escape(ByteBuf source) {
+    protected ByteBuf escape(ByteBuf source) {
         int low = source.readerIndex();
         int high = source.writerIndex();
 

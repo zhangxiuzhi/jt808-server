@@ -3,7 +3,7 @@ package org.yzh.codec;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import org.yzh.framework.orm.FieldFactory;
-import org.yzh.framework.orm.model.AbstractMessage;
+import org.yzh.protocol.basics.JTMessage;
 import org.yzh.protocol.codec.JTMessageDecoder;
 
 /**
@@ -21,9 +21,9 @@ public class Elucidator {
     }
 
     public static void main(String[] args) {
-        String hex = "020040610100000000017299841738ffff000004000000080006eeb6ad02633df701380003006320070719235901040000000b02020016030200210402002c05033737371105420000004212064d0000004d4d1307000000580058582504000000632a02000a2b040000001430011e31012863";
+        String hex = "020000d40123456789017fff000004000000080006eeb6ad02633df7013800030063200707192359642f000000400101020a0a02010a1e00640001b2070003640e200707192359000100000061646173200827111111010101652f000000410202020a0000000a1e00c8000516150006c81c20070719235900020000000064736d200827111111020202662900000042031e012c00087a23000a2c2a200707192359000300000074706d732008271111110303030067290000004304041e0190000bde31000d90382007071923590004000000006273642008271111110404049d";
 
-        AbstractMessage decode = elucidator.decode(Unpooled.wrappedBuffer(ByteBufUtil.decodeHexDump(hex)));
+        JTMessage decode = elucidator.decode(Unpooled.wrappedBuffer(ByteBufUtil.decodeHexDump(hex)));
         System.out.println(hex);
         System.out.println(decode.getHeader());
     }

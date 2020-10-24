@@ -1,5 +1,7 @@
 package org.yzh.protocol.commons.transform.attribute;
 
+import io.netty.buffer.ByteBuf;
+import org.yzh.framework.orm.util.ByteBufUtils;
 import org.yzh.protocol.commons.transform.Attribute;
 
 /**
@@ -14,23 +16,12 @@ public class TirePressure extends Attribute {
     public TirePressure() {
     }
 
-    public TirePressure(byte... value) {
+    public TirePressure(byte[] value) {
         this.value = value;
     }
 
     public int getAttributeId() {
         return attributeId;
-    }
-
-    @Override
-    public TirePressure formBytes(byte... bytes) {
-        this.value = bytes;
-        return this;
-    }
-
-    @Override
-    public byte[] toBytes() {
-        return value;
     }
 
     public byte[] getValue() {
@@ -39,5 +30,30 @@ public class TirePressure extends Attribute {
 
     public void setValue(byte[] value) {
         this.value = value;
+    }
+
+    public static class Schema implements org.yzh.framework.orm.Schema<TirePressure> {
+
+        public static final Schema INSTANCE = new Schema();
+
+        private final int length = 30;
+
+        private Schema() {
+        }
+
+        @Override
+        public TirePressure readFrom(ByteBuf input) {
+            int len = input.readableBytes();
+            if (len > length)
+                len = length;
+            byte[] value = new byte[len];
+            input.readBytes(value);
+            return new TirePressure(value);
+        }
+
+        @Override
+        public void writeTo(ByteBuf output, TirePressure message) {
+            ByteBufUtils.writeFixedLength(output, length, message.value);
+        }
     }
 }

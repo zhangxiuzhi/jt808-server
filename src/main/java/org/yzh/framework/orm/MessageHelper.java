@@ -1,5 +1,7 @@
 package org.yzh.framework.orm;
 
+import java.util.Map;
+
 /**
  * 消息ID关系映射
  * @author yezhihao
@@ -9,7 +11,7 @@ public class MessageHelper {
 
     private static volatile boolean Initial = false;
 
-    private static LoadStrategy LOAD_STRATEGY;
+    private static LoadStrategy LOAD_STRATEGY = new DefaultLoadStrategy();
 
     public static void initial(String basePackage) {
         if (!Initial) {
@@ -22,15 +24,15 @@ public class MessageHelper {
         }
     }
 
-    public static BeanMetadata getBeanMetadata(Object typeId, int version) {
-        return LOAD_STRATEGY.getBeanMetadata(typeId, version);
+    public static Schema getSchema(Object typeId, Integer version) {
+        return LOAD_STRATEGY.getSchema(typeId, version);
     }
 
-    public static BeanMetadata getBeanMetadata(Class<?> typeClass, int version) {
-        return LOAD_STRATEGY.getBeanMetadata(typeClass, version);
+    public static Schema getSchema(Class<?> typeClass, Integer version) {
+        return LOAD_STRATEGY.getSchema(typeClass, version);
     }
 
-    public static final Class<?> getHeaderClass() {
-        return LOAD_STRATEGY.getHeaderClass();
+    public static <T> Map<Integer, Schema<T>> getSchema(Class<T> typeClass) {
+        return LOAD_STRATEGY.getSchema(typeClass);
     }
 }

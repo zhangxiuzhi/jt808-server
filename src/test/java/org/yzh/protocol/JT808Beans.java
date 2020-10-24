@@ -2,16 +2,16 @@ package org.yzh.protocol;
 
 import org.yzh.framework.commons.transform.Bin;
 import org.yzh.framework.orm.annotation.Message;
-import org.yzh.framework.orm.model.AbstractMessage;
-import org.yzh.framework.orm.model.RawMessage;
 import org.yzh.protocol.basics.BytesAttribute;
-import org.yzh.protocol.basics.BytesParameter;
 import org.yzh.protocol.basics.Header;
+import org.yzh.protocol.basics.JTMessage;
 import org.yzh.protocol.commons.Action;
 import org.yzh.protocol.commons.ShapeAction;
 import org.yzh.protocol.commons.transform.Attribute;
-import org.yzh.protocol.commons.transform.ParameterType;
 import org.yzh.protocol.commons.transform.attribute.*;
+import org.yzh.protocol.commons.transform.parameter.ParamADAS;
+import org.yzh.protocol.commons.transform.parameter.ParamVideo;
+import org.yzh.protocol.jsatl12.AlarmId;
 import org.yzh.protocol.t808.*;
 
 import java.time.LocalDateTime;
@@ -29,7 +29,7 @@ public class JT808Beans {
     private static final Random R = new Random(1);
 
     /** 2013版消息头 */
-    public static AbstractMessage H2013(AbstractMessage message) {
+    public static JTMessage H2013(JTMessage message) {
         Header header = new Header();
         Message type = message.getClass().getAnnotation(Message.class);
         if (type != null)
@@ -43,7 +43,7 @@ public class JT808Beans {
     }
 
     /** 2019版消息头 */
-    public static AbstractMessage H2019(AbstractMessage message) {
+    public static JTMessage H2019(JTMessage message) {
         Header header = new Header();
         Message type = message.getClass().getAnnotation(Message.class);
         if (type != null)
@@ -76,8 +76,8 @@ public class JT808Beans {
     }
 
     //终端心跳
-    public static RawMessage T0002() {
-        RawMessage bean = new RawMessage();
+    public static JTMessage T0002() {
+        JTMessage bean = new JTMessage();
         return bean;
     }
 
@@ -113,19 +113,30 @@ public class JT808Beans {
     public static T0104 T0104() {
         T0104 bean = new T0104();
         bean.setSerialNo(104);
-        ParameterType[] values = ParameterType.values();
-        for (int i = 0; i < 38; i++) {
-            ParameterType p = values[i];
-            switch (p.type) {
-                case BYTE:
-                case WORD:
-                case DWORD:
-                    bean.addParameter(new BytesParameter(p.id, R.nextInt()));
-                default:
-                    bean.addParameter(new BytesParameter(p.id, STR16));
-            }
-        }
+        bean.setParameters(parameters());
         return bean;
+    }
+
+    //终端参数列表
+    public static Map<Integer, Object> parameters() {
+        ParamVideo paramVideo = new ParamVideo();
+        paramVideo.setRealtimeEncode((byte) 1);
+        paramVideo.setRealtimeResolution((byte) 1);
+        paramVideo.setRealtimeFrameInterval((byte) 1);
+        paramVideo.setRealtimeFrameRate((byte) 1);
+        paramVideo.setRealtimeBitRate((byte) 1);
+        paramVideo.setStorageEncode((byte) 2);
+        paramVideo.setStorageResolution((byte) 2);
+        paramVideo.setStorageFrameInterval((byte) 2);
+        paramVideo.setStorageFrameRate((byte) 2);
+        paramVideo.setStorageBitRate((byte) 2);
+        paramVideo.setOdsConfig((byte) 3);
+        paramVideo.setAudioEnable((byte) 3);
+
+        Map<Integer, Object> parameters = new TreeMap<>();
+        parameters.put(ParamVideo.id, paramVideo);
+        parameters.put(ParamADAS.id, new ParamADAS());
+        return parameters;
     }
 
     //查询终端属性应答
@@ -187,7 +198,7 @@ public class JT808Beans {
         attributes.put(Oil.attributeId, new Oil(22));
         attributes.put(Speed.attributeId, new Speed(33));
         attributes.put(AlarmEventId.attributeId, new AlarmEventId(44));
-        attributes.put(TirePressure.attributeId, new TirePressure((byte) 55, (byte) 55, (byte) 55));
+        attributes.put(TirePressure.attributeId, new TirePressure(new byte[]{55, 55, 55}));
         attributes.put(CarriageTemperature.attributeId, new CarriageTemperature(2));
         attributes.put(OverSpeedAlarm.attributeId, new OverSpeedAlarm((byte) 66, 66));
         attributes.put(InOutAreaAlarm.attributeId, new InOutAreaAlarm((byte) 77, 77, (byte) 77));
@@ -197,6 +208,76 @@ public class JT808Beans {
         attributes.put(AnalogQuantity.attributeId, new AnalogQuantity(20));
         attributes.put(SignalStrength.attributeId, new SignalStrength(30));
         attributes.put(GnssCount.attributeId, new GnssCount(40));
+        bean.setAttributes(attributes);
+        return bean;
+    }
+
+    //位置信息汇报
+    public static T0200 T0200JSATL12() {
+        AlarmADAS alarmADAS = new AlarmADAS();
+        alarmADAS.setSerialNo(64);
+        alarmADAS.setState(1);
+        alarmADAS.setType(1);
+        alarmADAS.setLevel(1);
+        alarmADAS.setFrontSpeed(10);
+        alarmADAS.setFrontDistance(10);
+        alarmADAS.setDeviateType(1);
+        alarmADAS.setRoadSign(1);
+        alarmADAS.setRoadSignValue(10);
+        alarmADAS.setSpeed(10);
+        alarmADAS.setAltitude(100);
+        alarmADAS.setLatitude(111111);
+        alarmADAS.setLongitude(222222);
+        alarmADAS.setDateTime(TIME);
+        alarmADAS.setStatus(1);
+        alarmADAS.setAlarmId(new AlarmId("adas", "200827111111", 1, 1, 1));
+
+        AlarmDSM alarmDSM = new AlarmDSM();
+        alarmDSM.setSerialNo(65);
+        alarmDSM.setState(2);
+        alarmDSM.setType(2);
+        alarmDSM.setLevel(2);
+        alarmDSM.setFatigueDegree(20);
+        alarmDSM.setReserved(20);
+        alarmDSM.setSpeed(20);
+        alarmDSM.setAltitude(200);
+        alarmDSM.setLatitude(333333);
+        alarmDSM.setLongitude(444444);
+        alarmDSM.setDateTime(TIME);
+        alarmDSM.setStatus(2);
+        alarmDSM.setAlarmId(new AlarmId("dsm", "200827111111", 2, 2, 2));
+
+        AlarmTPMS alarmTPMS = new AlarmTPMS();
+        alarmTPMS.setSerialNo(66);
+        alarmTPMS.setState(3);
+        alarmTPMS.setSpeed(30);
+        alarmTPMS.setAltitude(300);
+        alarmTPMS.setLatitude(555555);
+        alarmTPMS.setLongitude(666666);
+        alarmTPMS.setDateTime(TIME);
+        alarmTPMS.setStatus(3);
+        alarmTPMS.setAlarmId(new AlarmId("tpms", "200827111111", 3, 3, 3));
+
+        AlarmBSD alarmBSD = new AlarmBSD();
+        alarmBSD.setSerialNo(67);
+        alarmBSD.setState(4);
+        alarmBSD.setType(4);
+        alarmBSD.setSpeed(40);
+        alarmBSD.setAltitude(400);
+        alarmBSD.setLatitude(777777);
+        alarmBSD.setLongitude(888888);
+        alarmBSD.setDateTime(TIME);
+        alarmBSD.setStatus(4);
+        alarmBSD.setAlarmId(new AlarmId("bsd", "200827111111", 4, 4, 4));
+
+
+        T0200 bean = T0200();
+        Map<Integer, Attribute> attributes = new TreeMap();
+        attributes.put(AlarmADAS.attributeId, alarmADAS);
+        attributes.put(AlarmDSM.attributeId, alarmDSM);
+        attributes.put(AlarmTPMS.attributeId, alarmTPMS);
+        attributes.put(AlarmBSD.attributeId, alarmBSD);
+
         bean.setAttributes(attributes);
         return bean;
     }
@@ -353,18 +434,7 @@ public class JT808Beans {
     //设置终端参数
     public static T8103 T8103() {
         T8103 bean = new T8103();
-        ParameterType[] values = ParameterType.values();
-        for (int i = 0; i < 38; i++) {
-            ParameterType p = values[i];
-            switch (p.type) {
-                case BYTE:
-                case WORD:
-                case DWORD:
-                    bean.addParameter(new BytesParameter(p.id, R.nextInt()));
-                default:
-                    bean.addParameter(new BytesParameter(p.id, STR16));
-            }
-        }
+        bean.setParameters(parameters());
         return bean;
     }
 
@@ -610,7 +680,7 @@ public class JT808Beans {
         bean.setCommand(0x01);
         bean.setTime(6328);
         bean.setSave(1);
-        bean.setAudioSampleRate(0);
+        bean.setAudioSamplingRate(0);
         return bean;
     }
 
