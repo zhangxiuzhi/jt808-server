@@ -1,14 +1,15 @@
 package org.yzh.web.endpoint;
 
+import io.github.yezhihao.netmc.core.annotation.AsyncBatch;
+import io.github.yezhihao.netmc.core.annotation.Endpoint;
+import io.github.yezhihao.netmc.core.annotation.Mapping;
+import io.github.yezhihao.netmc.session.MessageManager;
+import io.github.yezhihao.netmc.session.Session;
+import io.github.yezhihao.netmc.util.AdapterList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.yzh.framework.mvc.annotation.AsyncBatch;
-import org.yzh.framework.mvc.annotation.Endpoint;
-import org.yzh.framework.mvc.annotation.Mapping;
-import org.yzh.framework.session.MessageManager;
-import org.yzh.framework.session.Session;
 import org.yzh.protocol.basics.Header;
 import org.yzh.protocol.basics.JTMessage;
 import org.yzh.protocol.t808.*;
@@ -20,7 +21,6 @@ import org.yzh.web.service.LocationService;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -149,13 +149,13 @@ public class JT808Endpoint {
     @Mapping(types = 定位数据批量上传, desc = "定位数据批量上传")
     public void 定位数据批量上传(T0704 message) {
         Header header = message.getHeader();
-        List<T0704.Item> items = message.getItems();
-        List<T0200> list = new ArrayList<>(items.size());
-        for (T0704.Item item : items) {
+        Session session = message.getSession();
+        List<T0200> list = new AdapterList<>(message.getItems(), item -> {
             T0200 position = item.getPosition();
             position.setHeader(header);
-            list.add(position);
-        }
+            position.setSession(session);
+            return position;
+        });
         locationService.batchInsert(list);
     }
 
@@ -242,7 +242,7 @@ public class JT808Endpoint {
     }
 
     @Mapping(types = 数据上行透传, desc = "数据上行透传")
-    public void passthrough(T8900_0900 message, Session session) {
+    public void passthrough(T0900 message, Session session) {
         Header header = message.getHeader();
     }
 

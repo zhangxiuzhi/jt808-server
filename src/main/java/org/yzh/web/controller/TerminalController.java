@@ -1,5 +1,8 @@
 package org.yzh.web.controller;
 
+import io.github.yezhihao.netmc.session.MessageManager;
+import io.github.yezhihao.netmc.session.Session;
+import io.github.yezhihao.netmc.session.SessionManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -9,9 +12,6 @@ import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
-import org.yzh.framework.session.MessageManager;
-import org.yzh.framework.session.Session;
-import org.yzh.framework.session.SessionManager;
 import org.yzh.protocol.basics.Header;
 import org.yzh.protocol.basics.JTMessage;
 import org.yzh.protocol.commons.JSATL12;
@@ -29,7 +29,7 @@ import org.yzh.web.model.enums.DefaultCodes;
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Api(description = "terminal api")
+@Api(description = "JT/T 808 API")
 @RestController
 @RequestMapping("terminal")
 public class TerminalController {
@@ -59,20 +59,10 @@ public class TerminalController {
         return "fail";
     }
 
-//    @ApiOperation(value = "终端参数可选项", tags = "终端管理类协议")
-//    @GetMapping("settings/option")
-//    public ParameterType[] settingsOption() {
-//        return ParameterType.values();
-//    }
-
     @ApiOperation(value = "设置终端参数", tags = "终端管理类协议")
     @PutMapping("settings")
-    public T0001 putSettings(@ApiParam("终端手机号") @RequestParam String clientId, @RequestBody Parameter... parameters) {
-        Map<Integer, Object> map = new TreeMap();
-        for (Parameter parameter : parameters) {
-            int id = parameter.getId();
-            map.put(id, Integer.valueOf(parameter.getValue()));
-        }
+    public T0001 putSettings(@ApiParam("终端手机号") @RequestParam String clientId, @RequestBody Parameter parameters) {
+        Map<Integer, Object> map = parameters.toMap();
         T8103 request = new T8103(clientId);
         request.setParameters(map);
         T0001 response = messageManager.request(request, T0001.class);
@@ -385,7 +375,7 @@ public class TerminalController {
 
     @ApiOperation(value = "数据下行透传", tags = "其他")
     @PostMapping("passthrough")
-    public T0001 passthrough(@ApiParam("终端手机号") @RequestParam String clientId, @RequestBody T8900_0900 request) {
+    public T0001 passthrough(@ApiParam("终端手机号") @RequestParam String clientId, @RequestBody T0900 request) {
         request.setHeader(new Header(clientId, JT808.数据下行透传));
         T0001 response = messageManager.request(request, T0001.class);
         return response;
@@ -410,9 +400,9 @@ public class TerminalController {
         return response;
     }
 
-    @Value("${tpc-server.jt808.alarm-file.host}")
+    @Value("${tcp-server.jt808.alarm-file.host}")
     private String host;
-    @Value("${tpc-server.jt808.alarm-file.port}")
+    @Value("${tcp-server.jt808.alarm-file.port}")
     private int port;
 
     @ApiOperation(value = "报警附件上传指令/测试使用", tags = "其他")

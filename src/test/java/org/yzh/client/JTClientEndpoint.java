@@ -1,9 +1,9 @@
 package org.yzh.client;
 
+import io.github.yezhihao.netmc.core.annotation.Endpoint;
+import io.github.yezhihao.netmc.core.annotation.Mapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yzh.framework.mvc.annotation.Endpoint;
-import org.yzh.framework.mvc.annotation.Mapping;
 import org.yzh.protocol.basics.Header;
 import org.yzh.protocol.t808.*;
 import org.yzh.web.endpoint.JT808Endpoint;
@@ -426,8 +426,8 @@ public class JTClientEndpoint {
         return result;
     }
 
-    @Mapping(types = 数据下行透传, desc = "数据下行透传")
-    public T0001 数据下行透传(T8900_0900 message) {
+    @Mapping(types = 数据上行透传, desc = "数据上行透传")
+    public T0001 数据下行透传(T0900 message) {
         Header header = message.getHeader();
         T0001 result = new T0001(mobileNo, serialNo.addAndGet(1));
         //TODO

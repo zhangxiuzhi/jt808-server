@@ -1,11 +1,11 @@
 package org.yzh.protocol.commons.transform;
 
-import org.yzh.framework.orm.IdStrategy;
-import org.yzh.framework.orm.PrepareLoadStrategy;
+import io.github.yezhihao.protostar.IdStrategy;
+import io.github.yezhihao.protostar.PrepareLoadStrategy;
 import org.yzh.protocol.commons.transform.attribute.*;
 
 /**
- * 位置附件信息注册
+ * 位置附加信息注册
  * @author yezhihao
  * @home https://gitee.com/yezhihao/jt808-server
  */

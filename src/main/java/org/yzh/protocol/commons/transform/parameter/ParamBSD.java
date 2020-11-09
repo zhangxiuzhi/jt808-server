@@ -1,6 +1,7 @@
 package org.yzh.protocol.commons.transform.parameter;
 
 import io.netty.buffer.ByteBuf;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * 盲区监测系统参数
@@ -15,14 +16,31 @@ public class ParamBSD {
         return id;
     }
 
-    public int 后方接近报警时间阈值;
-    public int 侧后方接近报警时间阈值;
+    @ApiModelProperty("后方接近报警时间阈值")
+    private byte p0;
+    @ApiModelProperty("侧后方接近报警时间阈值")
+    private byte p1;
 
     public ParamBSD() {
     }
 
+    public byte getP0() {
+        return p0;
+    }
 
-    public static class Schema implements org.yzh.framework.orm.Schema<ParamBSD> {
+    public void setP0(byte p0) {
+        this.p0 = p0;
+    }
+
+    public byte getP1() {
+        return p1;
+    }
+
+    public void setP1(byte p1) {
+        this.p1 = p1;
+    }
+
+    public static class Schema implements io.github.yezhihao.protostar.Schema<ParamBSD> {
 
         public static final Schema INSTANCE = new Schema();
 
@@ -32,16 +50,15 @@ public class ParamBSD {
         @Override
         public ParamBSD readFrom(ByteBuf input) {
             ParamBSD message = new ParamBSD();
-            message.后方接近报警时间阈值 = input.readByte();
-            message.侧后方接近报警时间阈值 = input.readByte();
-
+            message.p0 = input.readByte();
+            message.p1 = input.readByte();
             return message;
         }
 
         @Override
         public void writeTo(ByteBuf output, ParamBSD message) {
-            output.writeByte(message.后方接近报警时间阈值);
-            output.writeByte(message.侧后方接近报警时间阈值);
+            output.writeByte(message.p0);
+            output.writeByte(message.p1);
         }
     }
 }

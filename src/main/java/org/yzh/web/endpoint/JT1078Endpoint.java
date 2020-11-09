@@ -1,11 +1,11 @@
 package org.yzh.web.endpoint;
 
+import io.github.yezhihao.netmc.core.annotation.Endpoint;
+import io.github.yezhihao.netmc.core.annotation.Mapping;
+import io.github.yezhihao.netmc.session.MessageManager;
+import io.github.yezhihao.netmc.session.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.yzh.framework.mvc.annotation.Endpoint;
-import org.yzh.framework.mvc.annotation.Mapping;
-import org.yzh.framework.session.MessageManager;
-import org.yzh.framework.session.Session;
 import org.yzh.protocol.basics.Header;
 import org.yzh.protocol.t1078.T1003;
 import org.yzh.protocol.t1078.T1005;
@@ -34,8 +34,9 @@ public class JT1078Endpoint {
 
     @Mapping(types = 终端上传音视频资源列表, desc = "终端上传音视频资源列表")
     public T0001 终端上传音视频资源列表(T1205 message, Session session) {
-        Header header = message.getHeader();
+        messageManager.response(message);
 
+        Header header = message.getHeader();
         T0001 result = new T0001(session.nextSerialNo(), header.getMobileNo());
         result.setSerialNo(message.getSerialNo());
         result.setReplyId(header.getMessageId());
